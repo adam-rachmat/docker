@@ -1,0 +1,22 @@
+version: "3"
+      
+services:
+  nxfilter:
+    container_name: nxfilter
+    hostname: nxfilter
+    image: "deepwoods/nxfilter:latest"
+    tty: true
+    network_mode: "bridge"
+    restart: unless-stopped
+    ports:
+      - 53:53/udp
+      - 8080:80
+      - 8443:443
+      - 19002-19004:19002-19004
+    volumes:
+      - ./config:/nxfilter/conf
+      - ./log:/nxfilter/log
+      - ./db:/nxfilter/db
+      
+    environment:
+      - TZ=Asia/Jakarta
