@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  meshcentral:
+    container_name: meshcentral
+    image: "typhonragewind/meshcentral"
+    network_mode: "bridge"   
+    restart: always 
+    ports:
+      - 8433:443
+    volumes:
+      - ./data:/opt/meshcentral/meshcentral-data
+      - ./user_files:/opt/meshcentral/meshcentral-files
+
+    environment:
+            - HOSTNAME=   #your hostname
+            - REVERSE_PROXY=192.168.1.254    #set to your reverse proxy IP if you want to put meshcentral behind a reverse proxy
+            - REVERSE_PROXY_TLS_PORT=
+            - IFRAME=false    #set to true if you wish to enable iframe support
+            - ALLOW_NEW_ACCOUNTS=true    #set to false if you want disable self-service creation of new accounts besides the first (admin)
+            - WEBRTC=false  #set to true to enable WebRTC - per documentation it is not officially released with meshcentral, but is solid enough to work with. Use with caution
