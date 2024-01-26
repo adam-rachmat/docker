@@ -1,5 +1,6 @@
 docker run -d --restart=unless-stopped \
   -p 82:80 -p 4431:443 \
+  -v /home/dietpi/appdata/rancher:/var/lib/rancher \
   --privileged \
   rancher/rancher:latest \
   --no-cacerts
