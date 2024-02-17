@@ -1,0 +1,47 @@
+version: "3.8"
+services:
+
+## UPTIME KUMA
+  uptime-kuma:
+    image: "louislam/uptime-kuma:1"
+    networks:
+      - backend  
+#    ports:
+#      - 3001:3001
+    volumes:
+      - /mnt/docker/uptime-kuma/data:/app/data
+    environment:
+      - TZ=Asia/Jakarta
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+
+## GOTIFY
+  gotify:
+    image: gotify/server-arm64
+    networks:
+      - backend
+#    ports:
+#      - 8888:80
+    environment:
+      - GOTIFY_DEFAULTUSER_PASS=password
+      - TZ=Asia/Jakarta
+    volumes:
+      - "/mnt/docker/gotify:/app/data"
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  backend:
+    external: true

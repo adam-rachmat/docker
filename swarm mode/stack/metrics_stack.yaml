@@ -1,0 +1,128 @@
+## GRAFANA          
+  grafana:
+    image: grafana/grafana
+    user: "$UID:$GID"
+    networks:
+      - backend
+    volumes:
+      - /mnt/docker/grafana:/var/lib/grafana
+    environment:
+      - TZ=Asia/Jakarta
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+
+## PROMETHEUS  
+  prometheus:
+    image: prom/prometheus
+    user: "$UID:$GID"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--log.level=error'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+    environment:
+      - TZ=Asia/Jakarta
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+    volumes:
+      - /mnt/docker/prometheus/data:/prometheus
+      - /mnt/docker/prometheus/etc/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - backend
+
+## CADVISOR
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    command: -logtostderr -docker_only
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    volumes:
+      - type: bind
+        source: /
+        target: /rootfs
+        read_only: true
+      - type: bind
+        source: /var/run
+        target: /var/run
+        read_only: true
+      - type: bind
+        source: /sys
+        target: /sys
+        read_only: true
+      - type: bind
+        source: /mnt/dietpi_userdata/docker-data
+        target: /var/lib/docker
+        read_only: true
+      - type: bind
+        source: /dev/disk
+        target: /dev/disk
+        read_only: true                        
+    networks:
+      - backend
+
+## NODE EXPORTER  
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    hostname: '{{.Node.Hostname}}'
+    command:
+      - '--path.sysfs=/host/sys'
+      - '--path.procfs=/host/proc'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--no-collector.ipvs'
+    deploy:
+      mode: global
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    environment:
+      - NODE_ID={{.Node.ID}}
+    volumes:
+#      - /etc/hostname:/etc/hostname:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/TZ:ro
+    networks:
+      - backend
+
+## INFLUXDB  
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - 8086:8086
+      - 8089:8089/udp
+    networks:
+      - backend
+    volumes:
+      - /mnt/docker/influxdb/data:/var/lib/influxdb2
+      - /mnt/docker/influxdb/config:/etc/influxdb2
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+  
+networks:
+  backend:
+    external: true

@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  master:
+    image: mariadb:10.6
+    command: --log-bin --log-basename=mariadb
+
+    ports:
+      - 3306:3306
+    volumes:
+      - /mnt/docker/mariadb/master:/var/lib/mysql:rw
+    environment:
+      - MARIADB_ROOT_PASSWORD=adam
+      - MARIADB_USER=adam
+      - MARIADB_PASSWORD=adam
+      - MARIADB_DATABASE=modalsemangat
+      - MARIADB_REPLICATION_USER=rep
+      - MARIADB_REPLICATION_PASSWORD=rep
+    networks:
+      - backend
+#    healthcheck:
+#      test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 3
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+
+  slave1:
+    image: mariadb:10.6
+    command: --server-id=2 --log-basename=mariadb
+    ports:
+      - 3316:3306
+    volumes:
+      - /mnt/docker/mariadb/slave1:/var/lib/mysql:rw
+    environment:
+      - MARIADB_ROOT_PASSWORD=adam
+      - MARIADB_MASTER_HOST=master
+      - MARIADB_REPLICATION_USER=rep
+      - MARIADB_REPLICATION_PASSWORD=rep
+#      - MARIADB_HEALTHCHECK_GRANTS=REPLICA MONITOR
+#    healthcheck:
+#     test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect", "--replication_io", "--replication_sql", "--replication_seconds_behind_master=1", "--replication"]
+#     interval: 10s
+#     timeout: 5s
+#     retries: 3
+    depends_on:
+      - master
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  backend:
+    external: true

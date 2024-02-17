@@ -1,0 +1,27 @@
+version: '3'
+services:
+  homelab:
+    image: zyclonite/zerotier
+    container_name: zerotier-one
+    networks:
+      - host-net
+    devices:
+      - /dev/net/tun
+    volumes:
+      - '/mnt/appdata/zerotier/homelab:/var/lib/zerotier-one'
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  host-net:
+    external:
+      name: "host"

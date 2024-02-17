@@ -1,0 +1,55 @@
+version: "3"
+services:
+  npm:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: always
+    networks:
+      - apps
+    ports:
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+      # Add any other Stream port you want to expose
+      # - '21:21' # FTP
+    volumes:
+      - /mnt/appdata/npm/data:/data
+      - /mnt/appdata/npm/letsencrypt:/etc/letsencrypt
+    deploy:
+      mode: replicated
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: adguardhome
+    networks:
+      - apps
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+#      - 784:784/udp
+#      - 853:853/tcp
+      - 3001:3000/tcp
+#      - 80:80/tcp
+#      - 443:443/tcp
+    volumes:
+      - /mnt/appdata/adguard/workingdir:/opt/adguardhome/work
+      - /mnt/appdata/adguard/config:/opt/adguardhome/conf
+    environment:
+      - TZ=Asia/Jakarta
+    deploy:
+      mode: replicated
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+          
+networks:
+  apps:
+    external: true
